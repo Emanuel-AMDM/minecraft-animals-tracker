@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Animals Tracker</title>
+  <link rel="icon" type="image/x-icon" href="https://minecraft.wiki/images/Favicon.ico">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+
+  <!-- Header principal -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-container">
+        <span class="pixel-art-logo">⛏️</span>
+        <h1>MINECRAFT ANIMALS <span>TRACKER</span></h1>
+      </div>
+      <div id="connection-status" class="status-badge offline">
+        <span class="status-dot"></span>
+        <span class="status-text">Carregando...</span>
+      </div>
+    </div>
+
+    <!-- Painéis de Estatísticas Rápidas -->
+    <div class="header-stats">
+      <div class="stat-card" id="stat-collection">
+        <div class="stat-info">
+          <span class="stat-label">COLEÇÃO</span>
+          <span class="stat-value" id="count-collection">0/0</span>
+        </div>
+        <div class="stat-progress-bar">
+          <div class="progress-fill" id="fill-collection" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="stat-card" id="stat-pairs">
+        <div class="stat-info">
+          <span class="stat-label">CASAIS (PROCRIAR)</span>
+          <span class="stat-value" id="count-pairs">0/0</span>
+        </div>
+        <div class="stat-progress-bar">
+          <div class="progress-fill" id="fill-pairs" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="stat-card" id="stat-tamed">
+        <div class="stat-info">
+          <span class="stat-label">DOMESTICADOS</span>
+          <span class="stat-value" id="count-tamed">0/0</span>
+        </div>
+        <div class="stat-progress-bar">
+          <div class="progress-fill" id="fill-tamed" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra de Ações Rápidas -->
+  <div class="actions-toolbar">
+    <button id="btn-add-animal" class="btn btn-primary">
+      <span class="icon">➕</span> Novo Animal
+    </button>
+    <button id="btn-export-json" class="btn btn-secondary">
+      <span class="icon">📥</span> Exportar JSON
+    </button>
+    <label for="input-import-json" class="btn btn-secondary btn-file-label">
+      <span class="icon">📤</span> Importar JSON
+      <input type="file" id="input-import-json" accept=".json" style="display: none;">
+    </label>
+    <button id="btn-reset" class="btn btn-danger">
+      <span class="icon">🔄</span> Limpar Rastreamento
+    </button>
+  </div>
+
+  <!-- Layout Principal -->
+  <div class="app-layout">
+    
+    <!-- Sidebar de Filtros (Esquerda) -->
+    <aside class="app-sidebar">
+      <div class="sidebar-section">
+        <label for="search-box" class="section-title">PESQUISAR ANIMAL</label>
+        <div class="search-container">
+          <input type="text" id="search-box" placeholder="Digite o nome do animal...">
+          <button id="btn-clear-search" class="clear-search-btn" style="display: none;">×</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <label for="filter-category" class="section-title">FILTRAR POR CATEGORIA</label>
+        <select id="filter-category" class="styled-select">
+          <option value="all">Todas as Categorias</option>
+          <option value="Passivo">Passivos</option>
+          <option value="Neutro">Neutros</option>
+          <option value="Hostil">Hostis</option>
+          <option value="Aquático">Aquáticos</option>
+          <option value="tameable">Domesticáveis</option>
+          <option value="breedable">Procriáveis</option>
+        </select>
+      </div>
+
+      <div class="sidebar-section">
+        <label for="filter-biome" class="section-title">FILTRAR POR BIOMA</label>
+        <select id="filter-biome" class="styled-select">
+          <option value="all">Todos os Biomas</option>
+          <!-- Biomas serão carregados dinamicamente via JS -->
+        </select>
+      </div>
+
+      <div class="sidebar-section">
+        <label class="section-title">FILTRAR PROGRESSO</label>
+        <div class="radio-group">
+          <label class="radio-container">Todos
+            <input type="radio" checked="checked" name="progress-filter" value="all">
+            <span class="checkmark"></span>
+          </label>
+          <label class="radio-container">Obtidos
+            <input type="radio" name="progress-filter" value="owned">
+            <span class="checkmark"></span>
+          </label>
+          <label class="radio-container">Não Obtidos
+            <input type="radio" name="progress-filter" value="unowned">
+            <span class="checkmark"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <label class="section-title">VISUALIZAÇÃO</label>
+        
+        <div class="toggle-container">
+          <span class="toggle-label">Agrupar por Categoria</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-group-category">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-container">
+          <span class="toggle-label">Agrupar por Bioma principal</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-group-biome">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-container">
+          <span class="toggle-label">Ocultar Obtidos</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-hide-obtained">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-container">
+          <span class="toggle-label">Apenas Casais Faltantes</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-missing-pairs">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-container">
+          <span class="toggle-label">Apenas Domesticação Faltante</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-missing-tame">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-container">
+          <span class="toggle-label">Tema Simplificado (Sem cores)</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-low-fidelity">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Card do Criador -->
+      <div class="creator-card">
+        <div class="creator-avatar">
+          <img src="https://minecraft.wiki/images/Steve_JE2_BE2.png" alt="Steve" id="steve-avatar">
+        </div>
+        <div class="creator-info">
+          <h3>MADE FOR</h3>
+          <h2>CAIOSO</h2>
+          <span class="badge">VERSIÃO 1.0.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Grid de Animais (Direita) -->
+    <main class="app-main">
+      <div id="loading-spinner" class="spinner-container">
+        <div class="minecraft-spinner">
+          <div></div>
+        </div>
+        <p>Carregando Animais...</p>
+      </div>
+
+      <!-- Container do Grid de Cards ou Containers Agrupados -->
+      <div id="grid-container" class="cards-grid"></div>
+
+      <!-- Caso nenhum animal corresponda aos filtros -->
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <span class="empty-icon">🔍</span>
+        <h2>Nenhum animal encontrado</h2>
+        <p>Tente ajustar os filtros na barra lateral para ver outros animais.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: Adicionar/Editar Animal -->
+  <div id="animal-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Editar Animal</h2>
+        <span id="close-modal" class="close-btn">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="animal-form">
+          <input type="hidden" id="modal-animal-id">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modal-name">Nome do Animal *</label>
+              <input type="text" id="modal-name" required placeholder="Ex: Abelha">
+            </div>
+            <div class="form-group">
+              <label for="modal-english-name">Nome em Inglês (Wiki)</label>
+              <input type="text" id="modal-english-name" placeholder="Ex: Bee">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modal-category">Categoria *</label>
+              <select id="modal-category" required>
+                <option value="Passivo">Passivo</option>
+                <option value="Neutro">Neutro</option>
+                <option value="Hostil">Hostil</option>
+                <option value="Aquático">Aquático</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="modal-image">URL da Imagem</label>
+              <input type="url" id="modal-image" placeholder="https://exemplo.com/imagem.png">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-biomes">Biomas (Separados por vírgula)</label>
+            <input type="text" id="modal-biomes" placeholder="Ex: Planície, Floresta, Savana">
+          </div>
+
+          <div class="form-row checkbox-row">
+            <div class="form-checkbox">
+              <label class="switch-small">
+                <input type="checkbox" id="modal-tameable">
+                <span class="slider-small"></span>
+              </label>
+              <span class="checkbox-label">É Domesticável?</span>
+            </div>
+            
+            <div class="form-checkbox">
+              <label class="switch-small">
+                <input type="checkbox" id="modal-breedable">
+                <span class="slider-small"></span>
+              </label>
+              <span class="checkbox-label">É Procriável?</span>
+            </div>
+          </div>
+
+          <!-- Seção de Rastreamento no Jogo -->
+          <div class="modal-section-title">Progresso no Jogo</div>
+
+          <div class="form-row tracking-status-row">
+            <div class="status-toggle-card" id="card-toggle-obtained">
+              <span class="card-toggle-icon">✔️</span>
+              <span class="card-toggle-title">Já tenho</span>
+              <label class="switch-small">
+                <input type="checkbox" id="modal-obtained">
+                <span class="slider-small"></span>
+              </label>
+            </div>
+
+            <div class="status-toggle-card" id="card-toggle-pair">
+              <span class="card-toggle-icon">❤️</span>
+              <span class="card-toggle-title">Tem Casal</span>
+              <label class="switch-small">
+                <input type="checkbox" id="modal-haspair">
+                <span class="slider-small"></span>
+              </label>
+            </div>
+
+            <div class="status-toggle-card" id="card-toggle-tamed">
+              <span class="card-toggle-icon">🦴</span>
+              <span class="card-toggle-title">Domesticado</span>
+              <label class="switch-small">
+                <input type="checkbox" id="modal-tamed">
+                <span class="slider-small"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Campos extras e detalhes -->
+          <div class="form-row">
+            <div class="form-group" id="group-variants">
+              <label for="modal-variants-list">Variantes Cadastradas (Separadas por vírgula)</label>
+              <input type="text" id="modal-variants-list" placeholder="Ex: Rosa, Marrom, Ouro, Ciano, Azul">
+            </div>
+            
+            <div class="form-group" id="group-selected-variant">
+              <label for="modal-selected-variant">Variante Obtida</label>
+              <select id="modal-selected-variant">
+                <option value="">Nenhuma / Padrão</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modal-color">Cor / Detalhes de Aparência</label>
+              <input type="text" id="modal-color" placeholder="Ex: Ovelha Azul, Gato Siamês...">
+            </div>
+            <div class="form-group">
+              <label for="modal-coordinates">Coordenadas da Captura / Local</label>
+              <input type="text" id="modal-coordinates" placeholder="Ex: X: 140, Y: 64, Z: -230">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-notes">Notas / Observações</label>
+            <textarea id="modal-notes" rows="3" placeholder="Escreva observações adicionais sobre o animal, onde encontrou ou o nome que deu para ele..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-delete-animal" class="btn btn-danger-link" style="display: none;">Excluir Animal</button>
+        <div class="footer-right-buttons">
+          <button id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
+          <button id="btn-save-modal" type="submit" form="animal-form" class="btn btn-success">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-credits">
+    <p>&copy; 2026 - Minecraft Animals Tracker. Todos os dados são salvos no arquivo <code>db.json</code> ou no LocalStorage do seu navegador.</p>
+  </footer>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
